@@ -31,9 +31,9 @@ public class CameraActivity extends Activity {
     private Camera mCamera;
     private int displayOrientation;
     //预览窗口距离屏幕的间距 单位：Pix
-    private int previewMarginLeltAndRight = 50;
-    //预览窗口距离屏幕顶部的间距
-    private int previewMarginTop = 150;
+    private static final int previewMarginLeltAndRightDip = 100;
+    //预览窗口距离屏幕顶部的间距 等于0时预览框居中
+    private static final int previewMarginTop = 100;
     private int previewMarginTopDp;
     //预览窗口图片显示视图
     private ImageView previewIV;
@@ -47,8 +47,11 @@ public class CameraActivity extends Activity {
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) previewIV.getLayoutParams();
         previewMarginTopDp = DisplayUtil.dip2px(this, previewMarginTop);
         layoutParams.setMargins(layoutParams.leftMargin, previewMarginTopDp, layoutParams.rightMargin, layoutParams.bottomMargin);
-        layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-        //layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+        if (previewMarginTop == 0) {
+            layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
+        } else {
+            layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
+        }
 
         FrameLayout previewLayout = (FrameLayout) findViewById(R.id.camera_preview_layout);
 
@@ -157,18 +160,18 @@ public class CameraActivity extends Activity {
                     int retX = bitmapWidth > bitmapHeight ? (bitmapWidth - bitmapHeight) / 2 : 0;// 基于原图，取正方形左上角x坐标
                     int retY = bitmapWidth > bitmapHeight ? 0 : (bitmapHeight - bitmapWidth) / 2;
 
-                    int previewWindowMarginDp = DisplayUtil.dip2px(CameraActivity.this, previewMarginLeltAndRight);
-                    int newWidth = wh - previewWindowMarginDp;
-                    int newHeight = wh - previewWindowMarginDp;
+                    int previewWindowMarginPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginLeltAndRightDip);
+                    int newWidth = wh - previewWindowMarginPx;
+                    int newHeight = wh - previewWindowMarginPx;
                     int bitmapCutOffset;
                     if (previewMarginTopDp > 0) {
-                        //bitmapCutOffset = previewWidth / 2 - previewMarginTop - (newHeight + bitmapMarginDp / 2) / 2;
-                        bitmapCutOffset = previewWidth / 2 - previewMarginTopDp - (newHeight) / 2;
+                        //bitmapCutOffset = previewWidth / 2 - previewMarginTopDp - (newHeight + bitmapMarginDp / 2) / 2;
+                        bitmapCutOffset = previewWidth / 2 - previewMarginTopDp - newHeight / 2;
                     } else {
                         bitmapCutOffset = 0;
                     }
 
-                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewMarginLeltAndRight / 2 - bitmapCutOffset, retY + previewMarginLeltAndRight / 2, newWidth, newHeight, matrix, false);
+                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewWindowMarginPx / 2 - bitmapCutOffset, retY + previewWindowMarginPx / 2, newWidth, newHeight, matrix, false);
                     //final Bitmap newbitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
 
                     Log.e(TAG, Thread.currentThread().getName());
