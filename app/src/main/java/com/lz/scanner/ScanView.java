@@ -97,26 +97,26 @@ public class ScanView extends View {
         int height = mScanRec.height();
         int vertLinenum = width / LASER_PADDING_WIDTH;
         if ((laserGridTopOffset += (LASER_PADDING_WIDTH / 2)) < mScanRec.bottom - mScanRec.top) {
+            //激光矩形
+            Rect laserGridRect = new Rect(mScanRec.left, mScanRec.top, mScanRec.left, mScanRec.top + laserGridTopOffset);
             //画竖线，从左向右画
             for (int i = 1; i < vertLinenum; i++) {
-                int startX = mScanRec.left + LASER_PADDING_WIDTH * i;
+                int startX = laserGridRect.left + LASER_PADDING_WIDTH * i;
                 int stopX = startX;
-                int startY = mScanRec.top;
+                int startY = laserGridRect.top;
                 int stopY = startY + LASER_PADDING_WIDTH;
                 canvas.drawLine(startX, startY, stopX, stopY + laserGridTopOffset, mlaserGridPaint);
             }
 
             //横线线条，从上向下画
-            int gridHeight = laserGridTopOffset;
-            //竖直方向有多少条横线
-            int horiLinenum = gridHeight / LASER_PADDING_WIDTH;
-            for (int i = 1; i < horiLinenum + 1; i++) {
-                int startX = mScanRec.left;
+            int horiLinenum = laserGridRect.height() / LASER_PADDING_WIDTH;
+            for (int i = 0; i < horiLinenum + 1; i++) {
+                int startX = laserGridRect.left;
                 int stopX = startX + width;
-                int startY = mScanRec.top + LASER_PADDING_WIDTH * i;
+                int startY = laserGridRect.top + LASER_PADDING_WIDTH * i;
                 int stopY = startY;
                 //设置渐变色,Y值越大，颜色越深
-                int alpha = (int) ((i * (float) LASER_PADDING_WIDTH / (float) gridHeight) * 255);
+                int alpha = (int) ((i * (float) LASER_PADDING_WIDTH / (float) laserGridRect.height()) * 255);
                 //Log.e(TAG, alpha + "");
                 mlaserGridPaint.setAlpha(alpha);
                 canvas.drawLine(startX, startY, stopX, stopY, mlaserGridPaint);
