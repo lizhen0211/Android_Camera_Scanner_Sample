@@ -30,24 +30,33 @@ public class CameraActivity extends Activity {
     private CameraPreview mPreview;
     private Camera mCamera;
     private int displayOrientation;
-    //预览窗口距离屏幕的间距 单位：Pix
-    private static final int previewMarginLeltAndRightDip = 100;
+    //预览窗口距离屏幕的间距
+    private static final int previewMarginDip = 50;
+    //预览窗口距离屏幕间距 单位：像素
+    private int previewWindowMarginPx;
     //预览窗口距离屏幕顶部的间距 等于0时预览框居中
-    private static final int previewMarginTop = 100;
-    private int previewMarginTopDp;
+    private static final int previewMarginTopDip = 10;
+    //预览窗口距离屏幕顶部的间距 单位：像素
+    private int previewMarginTopPx;
     //预览窗口图片显示视图
     private ImageView previewIV;
+    //扫描视图
+    private ScanView scanView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_camera);
+
+        previewMarginTopPx = DisplayUtil.dip2px(this, previewMarginTopDip);
+        previewWindowMarginPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginDip);
+
         previewIV = (ImageView) findViewById(R.id.preview_iv);
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) previewIV.getLayoutParams();
-        previewMarginTopDp = DisplayUtil.dip2px(this, previewMarginTop);
-        layoutParams.setMargins(layoutParams.leftMargin, previewMarginTopDp, layoutParams.rightMargin, layoutParams.bottomMargin);
-        if (previewMarginTop == 0) {
+        layoutParams.setMargins(layoutParams.leftMargin, previewMarginTopPx, layoutParams.rightMargin, layoutParams.bottomMargin);
+        if (previewMarginTopPx == 0) {
             layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
         } else {
             layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
@@ -67,10 +76,30 @@ public class CameraActivity extends Activity {
             setCameraParams(screenWidth, screenHeight);
             //初始化相机
             initCamera(previewLayout);
+            //初始化扫描窗口
+            initScanView();
         } else {
             Toast.makeText(CameraActivity.this, "not support", Toast.LENGTH_SHORT).show();
+            finish();
         }
+    }
 
+    private void initScanView() {
+        scanView = (ScanView) findViewById(R.id.scan_view);
+        Camera.Size previewSize = mCamera.getParameters().getPreviewSize();
+        if (previewMarginTopPx > 0) {
+            int scanRecTop = previewMarginTopPx;
+            int scanRecLeft = previewWindowMarginPx;
+            int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
+            int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
+            scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
+        } else {
+            int scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2;
+            int scanRecLeft = previewWindowMarginPx;
+            int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
+            int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
+            scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
+        }
     }
 
     /**
@@ -160,21 +189,18 @@ public class CameraActivity extends Activity {
                     int retX = bitmapWidth > bitmapHeight ? (bitmapWidth - bitmapHeight) / 2 : 0;// 基于原图，取正方形左上角x坐标
                     int retY = bitmapWidth > bitmapHeight ? 0 : (bitmapHeight - bitmapWidth) / 2;
 
-                    int previewWindowMarginPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginLeltAndRightDip);
-                    int newWidth = wh - previewWindowMarginPx;
-                    int newHeight = wh - previewWindowMarginPx;
+                    int newWidth = wh - 2 * previewWindowMarginPx;
+                    int newHeight = wh - 2 * previewWindowMarginPx;
                     int bitmapCutOffset;
-                    if (previewMarginTopDp > 0) {
-                        //bitmapCutOffset = previewWidth / 2 - previewMarginTopDp - (newHeight + bitmapMarginDp / 2) / 2;
-                        bitmapCutOffset = previewWidth / 2 - previewMarginTopDp - newHeight / 2;
+                    if (previewMarginTopPx > 0) {
+                        //bitmapCutOffset = previewWidth / 2 - previewMarginTopPx - (newHeight + bitmapMarginDp / 2) / 2;
+                        bitmapCutOffset = previewWidth / 2 - previewMarginTopPx - newHeight / 2;
                     } else {
                         bitmapCutOffset = 0;
                     }
 
-                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewWindowMarginPx / 2 - bitmapCutOffset, retY + previewWindowMarginPx / 2, newWidth, newHeight, matrix, false);
+                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewWindowMarginPx - bitmapCutOffset, retY + previewWindowMarginPx, newWidth, newHeight, matrix, false);
                     //final Bitmap newbitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
-
-                    Log.e(TAG, Thread.currentThread().getName());
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
