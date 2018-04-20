@@ -35,7 +35,7 @@ public class CameraActivity extends Activity {
     //预览窗口距离屏幕间距 单位：像素
     private int previewWindowMarginPx;
     //预览窗口距离屏幕顶部的间距 等于0时预览框居中
-    private static final int previewMarginTopDip = 10;
+    private static final int previewMarginTopDip = 0;
     //预览窗口距离屏幕顶部的间距 单位：像素
     private int previewMarginTopPx;
     //预览窗口图片显示视图
