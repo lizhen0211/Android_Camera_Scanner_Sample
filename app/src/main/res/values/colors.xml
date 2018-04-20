@@ -5,4 +5,5 @@
     <color name="colorAccent">#FF4081</color>
     <color name="scanview_mask">#60000000</color>
     <color name="scanview_rect">#ffffffff</color>
+    <color name="laser_grid_color">#189ef0</color>
 </resources>

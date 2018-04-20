@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Android_Camera_Scanner_Sample</string>
+    <string name="scan_prompt">请将商家提供的二维码放入框内，即可自动扫描</string>
 </resources>
