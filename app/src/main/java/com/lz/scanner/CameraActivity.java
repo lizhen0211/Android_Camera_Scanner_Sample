@@ -10,6 +10,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Display;
+import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
@@ -19,8 +20,8 @@ import android.widget.Toast;
 
 import com.lz.scanner.camera.CameraManager;
 import com.lz.scanner.camera.CameraPreview;
+import com.lz.scanner.camera.CameraThreadPool;
 import com.lz.scanner.camera.CameraUtil;
-import com.lz.scanner.camera.open.OpenCameraInterface;
 
 import java.io.ByteArrayOutputStream;
 
@@ -38,6 +39,7 @@ public class CameraActivity extends Activity {
     private int previewMarginTopPx;
     //预览窗口图片显示视图
     private ImageView previewIV;
+    private boolean isPreviewIVVisiable = true;
     //扫描视图
     private ScanView scanView;
 
@@ -54,6 +56,7 @@ public class CameraActivity extends Activity {
         previewWindowMarginPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginDip);
 
         previewIV = (ImageView) findViewById(R.id.preview_iv);
+        previewIV.setVisibility(isPreviewIVVisiable ? View.VISIBLE : View.GONE);
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) previewIV.getLayoutParams();
         layoutParams.setMargins(layoutParams.leftMargin, previewMarginTopPx, layoutParams.rightMargin, layoutParams.bottomMargin);
         if (previewMarginTopPx == 0) {
@@ -65,7 +68,7 @@ public class CameraActivity extends Activity {
         FrameLayout previewLayout = (FrameLayout) findViewById(R.id.camera_preview_layout);
 
         //检测相机是否有相机硬件
-        if (OpenCameraInterface.checkCameraHardware(this)) {
+        if (CameraUtil.checkCameraHardware(this)) {
             cameraManager = new CameraManager();
             //初始化相机
             initCamera(previewLayout);
@@ -120,7 +123,7 @@ public class CameraActivity extends Activity {
     private CameraPreview.PreviewCallBack previewCallBack = new CameraPreview.PreviewCallBack() {
         @Override
         public void onPreviewFrame(final byte[] data, Camera camera) {
-            new Thread(new Runnable() {
+            CameraThreadPool.addTask(new Runnable() {
                 @Override
                 public void run() {
                     if (cameraManager.isReleaseCamera()) {
@@ -168,7 +171,9 @@ public class CameraActivity extends Activity {
                         @Override
                         public void run() {
                             try {
-                                previewIV.setImageBitmap(newbitmap);
+                                if (isPreviewIVVisiable) {
+                                    previewIV.setImageBitmap(newbitmap);
+                                }
                                 if (!cameraManager.isReleaseCamera()) {
                                     cameraManager.setOneShotPreviewCallback(mPreview);
                                 } else {
@@ -181,7 +186,7 @@ public class CameraActivity extends Activity {
                         }
                     });
                 }
-            }).start();
+            });
         }
     };
 }

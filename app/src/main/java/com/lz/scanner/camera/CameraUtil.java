@@ -1,6 +1,7 @@
 package com.lz.scanner.camera;
 
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.util.Log;
 import android.view.Display;
@@ -92,5 +93,19 @@ public class CameraUtil {
 
         int result = (camInfo.orientation - degrees + 360) % 360;
         return result;
+    }
+
+    /**
+     * Check if this device has a camera
+     */
+    public static boolean checkCameraHardware(Context context) {
+        /*if (context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA)) {
+            // this device has a camera
+            return true;
+        } else {
+            // no camera on this device
+            return false;
+        }*/
+        return context.getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA);
     }
 }
