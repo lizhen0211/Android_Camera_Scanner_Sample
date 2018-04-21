@@ -17,19 +17,17 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
 
+import com.lz.scanner.camera.CameraManager;
 import com.lz.scanner.camera.CameraPreview;
 import com.lz.scanner.camera.CameraUtil;
 import com.lz.scanner.camera.open.OpenCameraInterface;
 
 import java.io.ByteArrayOutputStream;
-import java.util.List;
 
 public class CameraActivity extends Activity {
     private static final String TAG = CameraActivity.class.getSimpleName();
 
     private CameraPreview mPreview;
-    private Camera mCamera;
-    private int displayOrientation;
     //预览窗口距离屏幕的间距
     private static final int previewMarginDip = 50;
     //预览窗口距离屏幕间距 单位：像素
@@ -42,6 +40,8 @@ public class CameraActivity extends Activity {
     private ImageView previewIV;
     //扫描视图
     private ScanView scanView;
+
+    private CameraManager cameraManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,9 +71,12 @@ public class CameraActivity extends Activity {
 
         //检测相机是否有相机硬件
         if (OpenCameraInterface.checkCameraHardware(this)) {
-            mCamera = OpenCameraInterface.open();
+            cameraManager = new CameraManager();
+            //设置相机显示方向
+            cameraManager.setDisplayOrientation(CameraUtil.getDisplayOrientation(this));
+            cameraManager.open();
             //设置相机参数
-            setCameraParams(screenWidth, screenHeight);
+            cameraManager.setCameraParams(screenWidth, screenHeight);
             //初始化相机
             initCamera(previewLayout);
             //初始化扫描窗口
@@ -86,7 +89,7 @@ public class CameraActivity extends Activity {
 
     private void initScanView() {
         scanView = (ScanView) findViewById(R.id.scan_view);
-        Camera.Size previewSize = mCamera.getParameters().getPreviewSize();
+        Camera.Size previewSize = cameraManager.getParameters().getPreviewSize();
         if (previewMarginTopPx > 0) {
             int scanRecTop = previewMarginTopPx;
             int scanRecLeft = previewWindowMarginPx;
@@ -108,54 +111,10 @@ public class CameraActivity extends Activity {
      * @param previewLayout
      */
     private void initCamera(FrameLayout previewLayout) {
-        mPreview = new CameraPreview(this, mCamera);
+        mPreview = new CameraPreview(this, cameraManager);
         //添加预览回调
         mPreview.setPreviewCallBack(previewCallBack);
         previewLayout.addView(mPreview);
-    }
-
-    /**
-     * 设置相机参数
-     *
-     * @param screenWidth
-     * @param screenHeight
-     */
-    private void setCameraParams(int screenWidth, int screenHeight) {
-        Camera.Parameters params = mCamera.getParameters();
-        //设置预览窗口大小
-        List<Camera.Size> sizes = params.getSupportedPreviewSizes();
-        if (sizes.size() > 0) {
-            Camera.Size maxSupportedSize = CameraUtil.getMaxSupportedSize(sizes);
-            Log.e(TAG + "previewSize", maxSupportedSize.width + ":" + maxSupportedSize.height);
-            int[] appropriateSize = CameraUtil.getAppropriateSize(sizes, maxSupportedSize, screenWidth, screenHeight);
-            params.setPreviewSize(appropriateSize[0], appropriateSize[1]);
-        }
-
-        //设置对焦模式
-        List<String> focusModes = params.getSupportedFocusModes();
-        if (focusModes.contains(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE)) {
-            // Autofocus mode is supported
-            // 设置连续对焦模式
-            params.setFocusMode(Camera.Parameters.FOCUS_MODE_CONTINUOUS_PICTURE);
-        }
-        //设置图片质量
-        params.setJpegQuality(100);
-
-        //设置图片大小
-        List<Camera.Size> supportedPictureSizes = params.getSupportedPictureSizes();
-        if (supportedPictureSizes.size() > 0) {
-            for (Camera.Size size : supportedPictureSizes) {
-                //Log.e(TAG + "PictureSize", size.width + ":" + size.height);
-            }
-            //params.setPictureSize(,);
-        }
-        Log.e(TAG, params.getPictureSize().width + ":" + params.getPictureSize().height);
-
-        //设置相机显示方向
-        displayOrientation = CameraUtil.getDisplayOrientation(this);
-        mCamera.setDisplayOrientation(displayOrientation);
-        params.setRotation(displayOrientation);
-        mCamera.setParameters(params);
     }
 
     private CameraPreview.PreviewCallBack previewCallBack = new CameraPreview.PreviewCallBack() {
@@ -164,9 +123,13 @@ public class CameraActivity extends Activity {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Camera.Parameters parameters = mCamera.getParameters();
-                    int previewWidth = parameters.getPreviewSize().width;
-                    int previewHeight = parameters.getPreviewSize().height;
+                    if (cameraManager.isReleaseCamera()) {
+                        Log.e(TAG, "has release 1");
+                    }
+                    Camera.Parameters parameters = cameraManager.getParameters();
+                    Camera.Size cameraPreviewSize = parameters.getPreviewSize();
+                    int previewWidth = cameraPreviewSize.width;
+                    int previewHeight = cameraPreviewSize.height;
                     YuvImage yuv = new YuvImage(data, parameters.getPreviewFormat(), previewWidth, previewHeight, null);
 
                     //压缩图片
@@ -181,7 +144,7 @@ public class CameraActivity extends Activity {
                     options.inJustDecodeBounds = false;
                     final Bitmap bitmap = BitmapFactory.decodeByteArray(bytes, 0, bytes.length, options);
                     Matrix matrix = new Matrix();
-                    matrix.preRotate(displayOrientation);
+                    matrix.preRotate(cameraManager.getDisplayOrientation());
 
                     int bitmapWidth = bitmap.getWidth(); // 得到图片的宽，高
                     int bitmapHeight = bitmap.getHeight();
@@ -206,7 +169,12 @@ public class CameraActivity extends Activity {
                         public void run() {
                             try {
                                 previewIV.setImageBitmap(newbitmap);
-                                mPreview.setOneShotPreviewCallback();
+                                if (!cameraManager.isReleaseCamera()) {
+                                    cameraManager.setOneShotPreviewCallback(mPreview);
+                                } else {
+                                    Log.e(TAG, "has release 2");
+                                }
+
                             } catch (Exception e) {
                                 e.printStackTrace();
                             }
@@ -217,10 +185,10 @@ public class CameraActivity extends Activity {
         }
     };
 
-    /*private void releaseCamera() {
-        if (mCamera != null) {
-            mCamera.release();        // release the camera for other applications
-            mCamera = null;
-        }
-    }*/
+    @Override
+    protected void onPause() {
+        super.onPause();
+        cameraManager.releaseCamera();
+        Log.e(TAG, "releaseCamera");
+    }
 }
