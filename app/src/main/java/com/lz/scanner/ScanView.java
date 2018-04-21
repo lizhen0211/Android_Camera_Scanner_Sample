@@ -33,7 +33,6 @@ public class ScanView extends View {
     private static final int MIDDLE_LINE_PADDING = 0;
     private int MIDDLE_LINE_WIDTH = 6;
 
-    private Rect laserGridRect;
     private int laserGridTopOffset = 0;
     private Paint mlaserGridPaint;
     private static final int LASER_PADDING_WIDTH = 10;
@@ -69,10 +68,9 @@ public class ScanView extends View {
         laserLineRect = new Rect();
         laserDrawable = context.getResources().getDrawable(R.drawable.scan_pointer);
 
-        laserGridRect = new Rect();
         mlaserGridPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         mlaserGridPaint.setColor(getResources().getColor(R.color.laser_grid_color));
-        mlaserGridPaint.setColor(Color.BLUE);
+        mlaserGridPaint.setColor(Color.GREEN);
     }
 
     @Override
@@ -92,6 +90,11 @@ public class ScanView extends View {
         drawDescText(canvas);
     }
 
+    /**
+     * 画激光矩形，此处最好替换为图片
+     *
+     * @param canvas
+     */
     private void drawLaserGrid(Canvas canvas) {
         int width = mScanRec.width();
         int height = mScanRec.height();
@@ -104,7 +107,7 @@ public class ScanView extends View {
                 int startX = laserGridRect.left + LASER_PADDING_WIDTH * i;
                 int stopX = startX;
                 int startY = laserGridRect.top;
-                int stopY = startY + LASER_PADDING_WIDTH;
+                int stopY = startY;
                 canvas.drawLine(startX, startY, stopX, stopY + laserGridTopOffset, mlaserGridPaint);
             }
 

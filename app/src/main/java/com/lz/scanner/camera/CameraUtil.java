@@ -26,8 +26,8 @@ public class CameraUtil {
      * @return
      */
     public static int[] getAppropriateSize(List<Camera.Size> sizes, Camera.Size maxSupportSize, int screenWidth, int screenHeight) {
-        int previewWidth = 0;
-        int previewHeight = 0;
+        int previewWidth = maxSupportSize.width;
+        int previewHeight = maxSupportSize.height;
         //个别手机的最大预览窗口大小比手机屏幕大小还要大，如小米。这是预览窗口会充满屏幕
         //如果是这样，找到一组与屏幕尺寸相同的预览窗口大小
         if (maxSupportSize.height > screenWidth) {
