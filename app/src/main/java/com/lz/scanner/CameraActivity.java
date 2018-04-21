@@ -64,19 +64,9 @@ public class CameraActivity extends Activity {
 
         FrameLayout previewLayout = (FrameLayout) findViewById(R.id.camera_preview_layout);
 
-        WindowManager windowManager = getWindowManager();
-        Display display = windowManager.getDefaultDisplay();
-        int screenWidth = display.getWidth();
-        int screenHeight = display.getHeight();
-
         //检测相机是否有相机硬件
         if (OpenCameraInterface.checkCameraHardware(this)) {
             cameraManager = new CameraManager();
-            //设置相机显示方向
-            cameraManager.setDisplayOrientation(CameraUtil.getDisplayOrientation(this));
-            cameraManager.open();
-            //设置相机参数
-            cameraManager.setCameraParams(screenWidth, screenHeight);
             //初始化相机
             initCamera(previewLayout);
             //初始化扫描窗口
@@ -85,6 +75,12 @@ public class CameraActivity extends Activity {
             Toast.makeText(CameraActivity.this, "not support", Toast.LENGTH_SHORT).show();
             finish();
         }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mPreview.onResume();
     }
 
     private void initScanView() {
@@ -111,7 +107,11 @@ public class CameraActivity extends Activity {
      * @param previewLayout
      */
     private void initCamera(FrameLayout previewLayout) {
-        mPreview = new CameraPreview(this, cameraManager);
+        WindowManager windowManager = getWindowManager();
+        Display display = windowManager.getDefaultDisplay();
+        int screenWidth = display.getWidth();
+        int screenHeight = display.getHeight();
+        mPreview = new CameraPreview(this, cameraManager, screenWidth, screenHeight);
         //添加预览回调
         mPreview.setPreviewCallBack(previewCallBack);
         previewLayout.addView(mPreview);
@@ -184,11 +184,4 @@ public class CameraActivity extends Activity {
             }).start();
         }
     };
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        cameraManager.releaseCamera();
-        Log.e(TAG, "releaseCamera");
-    }
 }

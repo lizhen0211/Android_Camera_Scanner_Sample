@@ -19,15 +19,23 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private SurfaceHolder mHolder;
     private Camera mCamera;
     private CameraManager mCameraManager;
-
     private PreviewCallBack previewCallBack;
+    private int screenWidth;
+    private int screenHeight;
+    private Context context;
+    private boolean hasCameraInited;
+    private boolean hasStartPreview;
 
     private static final String TAG = CameraPreview.class.getSimpleName();
 
-    public CameraPreview(Context context, CameraManager cameraManager) {
+    public CameraPreview(Context context, CameraManager cameraManager, int screenWidth, int screenHeight) {
         super(context);
-        mCamera = cameraManager.getCamera();
         mCameraManager = cameraManager;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        this.context = context;
+        initCamera(context, screenWidth, screenHeight);
+        mCamera = mCameraManager.getCamera();
         // Install a SurfaceHolder.Callback so we get notified when the
         // underlying surface is created and destroyed.
         mHolder = getHolder();
@@ -36,18 +44,57 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
 
-    @Override
-    public void surfaceCreated(SurfaceHolder holder) {
+    public void onResume() {
+        if (!hasCameraInited) {
+            initCamera(context, screenWidth, screenHeight);
+            mCamera = mCameraManager.getCamera();
+        }
+        if (!hasStartPreview) {
+            //开启预览
+            startPreview();
+        }
+    }
+
+    private void startPreview() {
         // The Surface has been created, now tell the camera where to draw the preview.
         try {
             //设置预览回调
             mCamera.setOneShotPreviewCallback(this);
             //通过SurfaceView显示取景画面
-            mCamera.setPreviewDisplay(holder);
+            mCamera.setPreviewDisplay(mHolder);
             //开始预览
             mCamera.startPreview();
         } catch (IOException e) {
             Log.d(TAG, "Error setting camera preview: " + e.getMessage());
+        }
+        hasStartPreview = true;
+    }
+
+    /**
+     * 初始化相机
+     *
+     * @param context
+     * @param screenWidth
+     * @param screenHeight
+     */
+    private void initCamera(Context context, int screenWidth, int screenHeight) {
+        //设置相机显示方向
+        mCameraManager.setDisplayOrientation(CameraUtil.getDisplayOrientation(context));
+        mCameraManager.open();
+        //设置相机参数
+        mCameraManager.setCameraParams(screenWidth, screenHeight);
+        hasCameraInited = true;
+    }
+
+    @Override
+    public void surfaceCreated(SurfaceHolder holder) {
+        if (!hasCameraInited) {
+            initCamera(context, screenWidth, screenHeight);
+            mCamera = mCameraManager.getCamera();
+        }
+        if (!hasStartPreview) {
+            //开启预览
+            startPreview();
         }
     }
 
@@ -59,6 +106,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         } catch (Exception e) {
             // ignore: tried to stop a non-existent preview
         }
+        mCameraManager.releaseCamera();
+        hasCameraInited = false;
+        hasStartPreview = false;
+        Log.e(TAG, "releaseCamera");
     }
 
     @Override
@@ -82,16 +133,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         // reformatting changes here
 
         // start preview with new settings
-        try {
-            //设置预览回调
-            mCamera.setOneShotPreviewCallback(this);
-            //通过SurfaceView显示取景画面
-            mCamera.setPreviewDisplay(mHolder);
-            //开始预览
-            mCamera.startPreview();
-        } catch (Exception e) {
-            Log.d(TAG, "Error starting camera preview: " + e.getMessage());
-        }
+        startPreview();
     }
 
     public void setPreviewCallBack(PreviewCallBack previewCallBack) {
