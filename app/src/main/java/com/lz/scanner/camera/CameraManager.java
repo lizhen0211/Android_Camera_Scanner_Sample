@@ -62,6 +62,10 @@ public final class CameraManager {
      * @param screenHeight
      */
     public void setCameraParams(int screenWidth, int screenHeight) {
+        if (mCamera == null) {
+            Log.e(TAG, "camera is null when setCameraParams");
+            return;
+        }
         Camera.Parameters params = mCamera.getParameters();
         //设置预览窗口大小
         List<Camera.Size> sizes = params.getSupportedPreviewSizes();
@@ -124,7 +128,9 @@ public final class CameraManager {
     }
 
     public synchronized void setOneShotPreviewCallback(Camera.PreviewCallback cb) {
-        mCamera.setOneShotPreviewCallback(cb);
+        if (mCamera != null) {
+            mCamera.setOneShotPreviewCallback(cb);
+        }
     }
 
     public synchronized void releaseCamera() {

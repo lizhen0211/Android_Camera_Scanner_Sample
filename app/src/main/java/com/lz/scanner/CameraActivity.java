@@ -71,7 +71,7 @@ public class CameraActivity extends Activity {
         if (CameraUtil.checkCameraHardware(this)) {
             cameraManager = new CameraManager();
             //初始化相机
-            initCamera(previewLayout);
+            initCamera(previewLayout, previewCallBack);
             //初始化扫描窗口
             initScanView();
         } else {
@@ -88,19 +88,22 @@ public class CameraActivity extends Activity {
 
     private void initScanView() {
         scanView = (ScanView) findViewById(R.id.scan_view);
-        Camera.Size previewSize = cameraManager.getParameters().getPreviewSize();
-        if (previewMarginTopPx > 0) {
-            int scanRecTop = previewMarginTopPx;
-            int scanRecLeft = previewWindowMarginPx;
-            int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-            int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
-            scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
-        } else {
-            int scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2;
-            int scanRecLeft = previewWindowMarginPx;
-            int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-            int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
-            scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
+        Camera.Parameters parameters = cameraManager.getParameters();
+        if (parameters != null) {
+            Camera.Size previewSize = parameters.getPreviewSize();
+            if (previewMarginTopPx > 0) {
+                int scanRecTop = previewMarginTopPx;
+                int scanRecLeft = previewWindowMarginPx;
+                int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
+                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
+                scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
+            } else {
+                int scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2;
+                int scanRecLeft = previewWindowMarginPx;
+                int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
+                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
+                scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
+            }
         }
     }
 
@@ -109,14 +112,14 @@ public class CameraActivity extends Activity {
      *
      * @param previewLayout
      */
-    private void initCamera(FrameLayout previewLayout) {
+    private void initCamera(FrameLayout previewLayout, CameraPreview.PreviewCallBack previewCallBack) {
         WindowManager windowManager = getWindowManager();
         Display display = windowManager.getDefaultDisplay();
         int screenWidth = display.getWidth();
         int screenHeight = display.getHeight();
-        mPreview = new CameraPreview(this, cameraManager, screenWidth, screenHeight);
+        mPreview = new CameraPreview(this, cameraManager, previewCallBack, screenWidth, screenHeight);
         //添加预览回调
-        mPreview.setPreviewCallBack(previewCallBack);
+        //mPreview.setPreviewCallBack(previewCallBack);
         previewLayout.addView(mPreview);
     }
 
@@ -187,6 +190,11 @@ public class CameraActivity extends Activity {
                     });
                 }
             });
+        }
+
+        @Override
+        public void onOpeningCameraFailed() {
+            Log.e(TAG, "onOpeningCameraFailed");
         }
     };
 }

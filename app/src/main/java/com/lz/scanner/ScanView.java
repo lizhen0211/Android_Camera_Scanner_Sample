@@ -76,18 +76,20 @@ public class ScanView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        //画背景
-        drawMask(canvas);
-        //画激光线
-        //drawLaserLine(canvas);
-        //画激光网格
-        drawLaserGrid(canvas);
-        //画扫描框边界
-        drawScanRectBorders(canvas);
-        //画扫描框四个角
-        drawScanRectCorners(canvas);
-        //画提示文字
-        drawDescText(canvas);
+        if (mScanRec != null) {
+            //画背景
+            drawMask(canvas);
+            //画激光线
+            //drawLaserLine(canvas);
+            //画激光网格
+            drawLaserGrid(canvas);
+            //画扫描框边界
+            drawScanRectBorders(canvas);
+            //画扫描框四个角
+            drawScanRectCorners(canvas);
+            //画提示文字
+            drawDescText(canvas);
+        }
     }
 
     /**

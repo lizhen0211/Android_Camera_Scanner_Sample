@@ -27,12 +27,13 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
 
     private static final String TAG = CameraPreview.class.getSimpleName();
 
-    public CameraPreview(Context context, CameraManager cameraManager, int screenWidth, int screenHeight) {
+    public CameraPreview(Context context, CameraManager cameraManager, CameraPreview.PreviewCallBack previewCallBack, int screenWidth, int screenHeight) {
         super(context);
         mCameraManager = cameraManager;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.context = context;
+        this.previewCallBack = previewCallBack;
         initCamera(context, screenWidth, screenHeight);
         isSurfaceLiving = true;
         mCamera = mCameraManager.getCamera();
@@ -55,6 +56,10 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     }
 
     private void startPreview() {
+        if (mCamera == null) {
+            Log.e(TAG, "camera is null when startPreview");
+            return;
+        }
         // The Surface has been created, now tell the camera where to draw the preview.
         try {
             //设置预览回调
@@ -79,9 +84,17 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     private void initCamera(Context context, int screenWidth, int screenHeight) {
         //设置相机显示方向
         mCameraManager.setDisplayOrientation(CameraUtil.getDisplayOrientation(context));
-        mCameraManager.open();
-        //设置相机参数
-        mCameraManager.setCameraParams(screenWidth, screenHeight);
+        try {
+            mCameraManager.open();
+            //设置相机参数
+            mCameraManager.setCameraParams(screenWidth, screenHeight);
+        } catch (RuntimeException e) {
+            Log.e(TAG, e.getMessage());
+            //大多情况没有允许Camera权限
+            if (previewCallBack != null) {
+                previewCallBack.onOpeningCameraFailed();
+            }
+        }
         Log.e(TAG, "init Camera");
     }
 
@@ -99,14 +112,22 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
     @Override
     public void surfaceDestroyed(SurfaceHolder holder) {
         // empty. Take care of releasing the Camera preview in your activity.
+        stopPreview();
+        mCameraManager.releaseCamera();
+        isSurfaceLiving = false;
+        Log.e(TAG, "releaseCamera");
+    }
+
+    private void stopPreview() {
+        if (mCamera == null) {
+            Log.e(TAG, "camera is null when stopPreview");
+            return;
+        }
         try {
             mCamera.stopPreview();
         } catch (Exception e) {
             // ignore: tried to stop a non-existent preview
         }
-        mCameraManager.releaseCamera();
-        isSurfaceLiving = false;
-        Log.e(TAG, "releaseCamera");
     }
 
     @Override
@@ -120,11 +141,7 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
 
         // stop preview before making changes
-        try {
-            mCamera.stopPreview();
-        } catch (Exception e) {
-            // ignore: tried to stop a non-existent preview
-        }
+        stopPreview();
 
         // set preview size and make any resize, rotate or
         // reformatting changes here
@@ -145,11 +162,18 @@ public class CameraPreview extends SurfaceView implements SurfaceHolder.Callback
         }
     }
 
-    public void setOneShotPreviewCallback() {
-        mCamera.setOneShotPreviewCallback(this);
-    }
-
     public interface PreviewCallBack {
+        /**
+         * 预览回调
+         *
+         * @param data   预览数据
+         * @param camera
+         */
         void onPreviewFrame(byte[] data, Camera camera);
+
+        /**
+         * 打开相机失败
+         */
+        void onOpeningCameraFailed();
     }
 }
