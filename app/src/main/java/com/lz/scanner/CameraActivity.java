@@ -13,6 +13,7 @@ import android.hardware.Camera;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
@@ -44,7 +45,7 @@ public class CameraActivity extends Activity {
     private int previewMarginTopPx;
     //预览窗口图片显示视图
     private ImageView previewIV;
-    private boolean isPreviewIVVisiable = true;
+    private boolean isPreviewIVVisiable = false;
     //扫描视图
     private ScanView scanView;
 
@@ -183,27 +184,41 @@ public class CameraActivity extends Activity {
                     } else {
                         bitmapCutOffset = 0;
                     }
-
+                    // 截取预览框中的bitmap
                     final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewWindowMarginPx - bitmapCutOffset, retY + previewWindowMarginPx, newWidth, newHeight, matrix, false);
                     //final Bitmap newbitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
+
+                    //显示截取的预览框中的bitmap，调试使用
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            try {
-                                if (isPreviewIVVisiable) {
-                                    previewIV.setImageBitmap(newbitmap);
-                                }
-                                if (!cameraManager.isReleaseCamera()) {
-                                    cameraManager.setOneShotPreviewCallback(mPreview);
-                                } else {
-                                    Log.e(TAG, "has release 2");
-                                }
-
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                            if (isPreviewIVVisiable) {
+                                previewIV.setImageBitmap(newbitmap);
                             }
                         }
                     });
+
+                    //解析二维码图片
+                    String result = QRUtil.decodeQRCodeByBitmap(newbitmap);
+                    if (newbitmap != null) {
+                        newbitmap.recycle();
+                        Log.e(TAG, "recycle");
+                    }
+
+                    if (!TextUtils.isEmpty(result)) {
+                        CameraActivity.this.finish();
+                    } else {
+                        try {
+                            if (!cameraManager.isReleaseCamera()) {
+                                //接收下一次预览回调
+                                cameraManager.setOneShotPreviewCallback(mPreview);
+                            } else {
+                                Log.e(TAG, "has release 2");
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
                 }
             });
         }
