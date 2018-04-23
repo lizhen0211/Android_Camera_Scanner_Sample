@@ -202,10 +202,12 @@ public class CameraActivity extends Activity {
                     String result = QRUtil.decodeQRCodeByBitmap(newbitmap);
                     if (newbitmap != null) {
                         newbitmap.recycle();
-                        Log.e(TAG, "recycle");
                     }
 
                     if (!TextUtils.isEmpty(result)) {
+                        Intent intent = new Intent();
+                        intent.putExtra("result", result);
+                        setResult(RESULT_OK, intent);
                         CameraActivity.this.finish();
                     } else {
                         try {
