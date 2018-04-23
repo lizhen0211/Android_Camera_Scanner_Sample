@@ -1,13 +1,18 @@
 package com.lz.scanner;
 
 import android.app.Activity;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.graphics.YuvImage;
 import android.hardware.Camera;
+import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.Display;
 import android.view.View;
@@ -44,6 +49,7 @@ public class CameraActivity extends Activity {
     private ScanView scanView;
 
     private CameraManager cameraManager;
+    private boolean hasScanViewInitialized;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -51,6 +57,8 @@ public class CameraActivity extends Activity {
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         this.getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         setContentView(R.layout.activity_camera);
+
+        scanView = (ScanView) findViewById(R.id.scan_view);
 
         previewMarginTopPx = DisplayUtil.dip2px(this, previewMarginTopDip);
         previewWindowMarginPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginDip);
@@ -83,11 +91,17 @@ public class CameraActivity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        mPreview.onResume();
+        if (CameraUtil.checkCameraHardware(this)) {
+            // 处理：1、锁屏恢复后，重新初始化Camera；2、从Camera权限页面返回case
+            mPreview.onResume();
+            //处理从Camera权限页面返回case.当进入CameraActivity时没有Camera权限，ScanView不会被初始化.
+            if (!hasScanViewInitialized) {
+                initScanView();
+            }
+        }
     }
 
     private void initScanView() {
-        scanView = (ScanView) findViewById(R.id.scan_view);
         Camera.Parameters parameters = cameraManager.getParameters();
         if (parameters != null) {
             Camera.Size previewSize = parameters.getPreviewSize();
@@ -104,6 +118,8 @@ public class CameraActivity extends Activity {
                 int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
                 scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
             }
+            hasScanViewInitialized = true;
+            Log.e(TAG, "initScanView");
         }
     }
 
@@ -195,6 +211,44 @@ public class CameraActivity extends Activity {
         @Override
         public void onOpeningCameraFailed() {
             Log.e(TAG, "onOpeningCameraFailed");
+            showMissingPermissionDialog();
         }
     };
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == START_SETTING_REQUEST_CODE) {
+
+        }
+    }
+
+    private static final int START_SETTING_REQUEST_CODE = 1;
+
+    private void showMissingPermissionDialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("提示");
+        builder.setMessage("无法开启摄像头，请检查是否已经打开摄像头权限");
+        // 拒绝, 退出应用
+        builder.setNegativeButton("取消",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Toast.makeText(getApplicationContext(), "权限未开启，无法使用照相机", Toast.LENGTH_SHORT).show();
+                        finish();
+                    }
+                });
+        builder.setPositiveButton("确定",
+                new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        Intent intent = new Intent(
+                                Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                        intent.setData(Uri.parse("package:" + getPackageName()));
+                        startActivityForResult(intent, START_SETTING_REQUEST_CODE);
+                    }
+                });
+        builder.setCancelable(false);
+        builder.show();
+    }
 }
