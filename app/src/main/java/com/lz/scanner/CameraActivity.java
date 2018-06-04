@@ -40,12 +40,15 @@ public class CameraActivity extends Activity {
     //预览窗口距离屏幕间距 单位：像素
     private int previewWindowMarginPx;
     //预览窗口距离屏幕顶部的间距 等于0时预览框居中
-    private static final int previewMarginTopDip = 0;
+    private static final int previewMarginTopDip = 30;
     //预览窗口距离屏幕顶部的间距 单位：像素
     private int previewMarginTopPx;
+    private static final int previewMarginOffsetDip = 0;
+    //预览窗口距离屏幕上下偏移量 使正方形变成矩形 单位：像素
+    private int previewMarginOffsetPx;
     //预览窗口图片显示视图
     private ImageView previewIV;
-    private boolean isPreviewIVVisiable = false;
+    private boolean isPreviewIVVisiable = true;
     //扫描视图
     private ScanView scanView;
 
@@ -63,11 +66,12 @@ public class CameraActivity extends Activity {
 
         previewMarginTopPx = DisplayUtil.dip2px(this, previewMarginTopDip);
         previewWindowMarginPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginDip);
+        previewMarginOffsetPx = DisplayUtil.dip2px(this, previewMarginOffsetDip);
 
         previewIV = (ImageView) findViewById(R.id.preview_iv);
         previewIV.setVisibility(isPreviewIVVisiable ? View.VISIBLE : View.GONE);
         RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) previewIV.getLayoutParams();
-        layoutParams.setMargins(layoutParams.leftMargin, previewMarginTopPx, layoutParams.rightMargin, layoutParams.bottomMargin);
+        layoutParams.setMargins(layoutParams.leftMargin, previewMarginTopPx + previewMarginOffsetPx, layoutParams.rightMargin, layoutParams.bottomMargin);
         if (previewMarginTopPx == 0) {
             layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
         } else {
@@ -107,16 +111,16 @@ public class CameraActivity extends Activity {
         if (parameters != null) {
             Camera.Size previewSize = parameters.getPreviewSize();
             if (previewMarginTopPx > 0) {
-                int scanRecTop = previewMarginTopPx;
+                int scanRecTop = previewMarginTopPx + previewMarginOffsetPx;
                 int scanRecLeft = previewWindowMarginPx;
                 int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
+                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
                 scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
             } else {
-                int scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2;
+                int scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2 + previewMarginOffsetPx;
                 int scanRecLeft = previewWindowMarginPx;
                 int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx);
+                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
                 scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
             }
             hasScanViewInitialized = true;
@@ -185,7 +189,7 @@ public class CameraActivity extends Activity {
                         bitmapCutOffset = 0;
                     }
                     // 截取预览框中的bitmap
-                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewWindowMarginPx - bitmapCutOffset, retY + previewWindowMarginPx, newWidth, newHeight, matrix, false);
+                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewWindowMarginPx - bitmapCutOffset + previewMarginOffsetPx, retY + previewWindowMarginPx, newWidth - 2 * previewMarginOffsetPx, newHeight, matrix, false);
                     //final Bitmap newbitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
 
                     //显示截取的预览框中的bitmap，调试使用
