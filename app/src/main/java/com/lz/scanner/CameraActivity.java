@@ -197,15 +197,21 @@ public class CameraActivity extends Activity {
                         @Override
                         public void run() {
                             if (isPreviewIVVisiable) {
-                                previewIV.setImageBitmap(newbitmap);
+                                if (newbitmap != null && !newbitmap.isRecycled()) {
+                                    previewIV.setImageBitmap(newbitmap);
+                                }
                             }
                         }
                     });
 
                     //解析二维码图片
                     String result = QRUtil.decodeQRCodeByBitmap(newbitmap);
-                    if (newbitmap != null) {
+
+                    if (newbitmap != null && !newbitmap.isRecycled()) {
                         newbitmap.recycle();
+                    }
+                    if (bitmap != null && !bitmap.isRecycled()) {
+                        bitmap.recycle();
                     }
 
                     if (!TextUtils.isEmpty(result)) {
