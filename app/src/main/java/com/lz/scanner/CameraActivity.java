@@ -46,6 +46,9 @@ public class CameraActivity extends Activity {
     private static final int previewMarginOffsetDip = 0;
     //预览窗口距离屏幕上下偏移量 使正方形变成矩形 单位：像素
     private int previewMarginOffsetPx;
+    //扫描窗口左、上、右、下
+    private int scanRecLeft, scanRecTop, scanRecRight, scanRecBottom;
+
     //预览窗口图片显示视图
     private ImageView previewIV;
     private boolean isPreviewIVVisiable = true;
@@ -70,14 +73,6 @@ public class CameraActivity extends Activity {
 
         previewIV = (ImageView) findViewById(R.id.preview_iv);
         previewIV.setVisibility(isPreviewIVVisiable ? View.VISIBLE : View.GONE);
-        RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) previewIV.getLayoutParams();
-        layoutParams.setMargins(layoutParams.leftMargin, previewMarginTopPx + previewMarginOffsetPx, layoutParams.rightMargin, layoutParams.bottomMargin);
-        if (previewMarginTopPx == 0) {
-            layoutParams.addRule(RelativeLayout.CENTER_IN_PARENT);
-        } else {
-            layoutParams.addRule(RelativeLayout.CENTER_HORIZONTAL);
-        }
-
         FrameLayout previewLayout = (FrameLayout) findViewById(R.id.camera_preview_layout);
 
         //检测相机是否有相机硬件
@@ -111,18 +106,21 @@ public class CameraActivity extends Activity {
         if (parameters != null) {
             Camera.Size previewSize = parameters.getPreviewSize();
             if (previewMarginTopPx > 0) {
-                int scanRecTop = previewMarginTopPx + previewMarginOffsetPx;
-                int scanRecLeft = previewWindowMarginPx;
-                int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
+                scanRecTop = previewMarginTopPx + previewMarginOffsetPx;
+                scanRecLeft = previewWindowMarginPx;
+                scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
+                scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
                 scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
             } else {
-                int scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2 + previewMarginOffsetPx;
-                int scanRecLeft = previewWindowMarginPx;
-                int scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-                int scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
+                scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2 + previewMarginOffsetPx;
+                scanRecLeft = previewWindowMarginPx;
+                scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
+                scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
                 scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
             }
+            RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) previewIV.getLayoutParams();
+            layoutParams.setMargins(previewWindowMarginPx, scanRecTop, previewWindowMarginPx, layoutParams.bottomMargin);
+            previewIV.setLayoutParams(layoutParams);
             hasScanViewInitialized = true;
             Log.e(TAG, "initScanView");
         }
@@ -173,23 +171,13 @@ public class CameraActivity extends Activity {
                     Matrix matrix = new Matrix();
                     matrix.preRotate(cameraManager.getDisplayOrientation());
 
-                    int bitmapWidth = bitmap.getWidth(); // 得到图片的宽，高
-                    int bitmapHeight = bitmap.getHeight();
-                    int wh = bitmapWidth > bitmapHeight ? bitmapHeight : bitmapWidth;// 裁切后所取的正方形区域边长
-                    int retX = bitmapWidth > bitmapHeight ? (bitmapWidth - bitmapHeight) / 2 : 0;// 基于原图，取正方形左上角x坐标
-                    int retY = bitmapWidth > bitmapHeight ? 0 : (bitmapHeight - bitmapWidth) / 2;
+                    int newBitmapX = scanRecTop;
+                    int newBitmapY = scanRecLeft;
+                    int newBitmapWidth = scanRecBottom - scanRecTop;
+                    int newBitmapHeight = scanRecRight - scanRecLeft;
 
-                    int newWidth = wh - 2 * previewWindowMarginPx;
-                    int newHeight = wh - 2 * previewWindowMarginPx;
-                    int bitmapCutOffset;
-                    if (previewMarginTopPx > 0) {
-                        //bitmapCutOffset = previewWidth / 2 - previewMarginTopPx - (newHeight + bitmapMarginDp / 2) / 2;
-                        bitmapCutOffset = previewWidth / 2 - previewMarginTopPx - newHeight / 2;
-                    } else {
-                        bitmapCutOffset = 0;
-                    }
                     // 截取预览框中的bitmap
-                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, retX + previewWindowMarginPx - bitmapCutOffset + previewMarginOffsetPx, retY + previewWindowMarginPx, newWidth - 2 * previewMarginOffsetPx, newHeight, matrix, false);
+                    final Bitmap newbitmap = Bitmap.createBitmap(bitmap, newBitmapX, newBitmapY, newBitmapWidth, newBitmapHeight, matrix, false);
                     //final Bitmap newbitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, false);
 
                     //显示截取的预览框中的bitmap，调试使用
