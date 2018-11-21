@@ -35,10 +35,10 @@ public class CameraActivity extends Activity {
     private static final String TAG = CameraActivity.class.getSimpleName();
 
     private CameraPreview mPreview;
-    //预览窗口距离屏幕的间距
-    private static final int previewMarginDip = 50;
+    //预览窗口距离屏幕左右的间距
+    private static final int previewMarginLeftOrRightDip = 50;
     //预览窗口距离屏幕间距 单位：像素
-    private int previewWindowMarginPx;
+    private int previewMarginLeftOrRightPx;
     //预览窗口距离屏幕顶部的间距 等于0时预览框居中
     private static final int previewMarginTopDip = 30;
     //预览窗口距离屏幕顶部的间距 单位：像素
@@ -68,7 +68,7 @@ public class CameraActivity extends Activity {
         scanView = (ScanView) findViewById(R.id.scan_view);
 
         previewMarginTopPx = DisplayUtil.dip2px(this, previewMarginTopDip);
-        previewWindowMarginPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginDip);
+        previewMarginLeftOrRightPx = DisplayUtil.dip2px(CameraActivity.this, previewMarginLeftOrRightDip);
         previewMarginOffsetPx = DisplayUtil.dip2px(this, previewMarginOffsetDip);
 
         previewIV = (ImageView) findViewById(R.id.preview_iv);
@@ -107,19 +107,19 @@ public class CameraActivity extends Activity {
             Camera.Size previewSize = parameters.getPreviewSize();
             if (previewMarginTopPx > 0) {
                 scanRecTop = previewMarginTopPx + previewMarginOffsetPx;
-                scanRecLeft = previewWindowMarginPx;
-                scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-                scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
+                scanRecLeft = previewMarginLeftOrRightPx;
+                scanRecRight = previewMarginLeftOrRightPx + (previewSize.height - 2 * previewMarginLeftOrRightPx);
+                scanRecBottom = scanRecTop + (previewSize.height - 2 * previewMarginLeftOrRightPx) - 2 * previewMarginOffsetPx;
                 scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
             } else {
-                scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewWindowMarginPx) / 2 + previewMarginOffsetPx;
-                scanRecLeft = previewWindowMarginPx;
-                scanRecRight = previewWindowMarginPx + (previewSize.height - 2 * previewWindowMarginPx);
-                scanRecBottom = scanRecTop + (previewSize.height - 2 * previewWindowMarginPx) - 2 * previewMarginOffsetPx;
+                scanRecTop = previewSize.width / 2 - (previewSize.height - 2 * previewMarginLeftOrRightPx) / 2 + previewMarginOffsetPx;
+                scanRecLeft = previewMarginLeftOrRightPx;
+                scanRecRight = previewMarginLeftOrRightPx + (previewSize.height - 2 * previewMarginLeftOrRightPx);
+                scanRecBottom = scanRecTop + (previewSize.height - 2 * previewMarginLeftOrRightPx) - 2 * previewMarginOffsetPx;
                 scanView.setScanRec(new Rect(scanRecLeft, scanRecTop, scanRecRight, scanRecBottom));
             }
             RelativeLayout.LayoutParams layoutParams = (RelativeLayout.LayoutParams) previewIV.getLayoutParams();
-            layoutParams.setMargins(previewWindowMarginPx, scanRecTop, previewWindowMarginPx, layoutParams.bottomMargin);
+            layoutParams.setMargins(previewMarginLeftOrRightPx, scanRecTop, previewMarginLeftOrRightPx, layoutParams.bottomMargin);
             previewIV.setLayoutParams(layoutParams);
             hasScanViewInitialized = true;
             Log.e(TAG, "initScanView");
