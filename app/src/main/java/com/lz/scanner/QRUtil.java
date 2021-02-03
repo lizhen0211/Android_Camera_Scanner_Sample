@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.ChecksumException;
 import com.google.zxing.FormatException;
+import com.google.zxing.InvertedLuminanceSource;
 import com.google.zxing.NotFoundException;
 import com.google.zxing.RGBLuminanceSource;
 import com.google.zxing.Result;
@@ -31,7 +32,9 @@ public class QRUtil {
         int[] data = new int[width * height];
         bitmap.getPixels(data, 0, width, 0, 0, width, height);
         RGBLuminanceSource source = new RGBLuminanceSource(width, height, data);
-        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source));
+        // 反转处理
+        InvertedLuminanceSource source1 = new InvertedLuminanceSource(source);
+        BinaryBitmap binaryBitmap = new BinaryBitmap(new HybridBinarizer(source1));
         QRCodeReader reader = new QRCodeReader();
         Result re = null;
         try {
