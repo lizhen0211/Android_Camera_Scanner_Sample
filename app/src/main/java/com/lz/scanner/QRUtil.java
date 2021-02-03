@@ -24,6 +24,8 @@ public class QRUtil {
      * @return
      */
     public static String decodeQRCodeByBitmap(Bitmap bitmap) {
+        // 反转颜色 处理白色二维码
+        //bitmap = ImageProcessUtils.invertColor(bitmap);
         int width = bitmap.getWidth();
         int height = bitmap.getHeight();
         int[] data = new int[width * height];
